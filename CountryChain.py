@@ -4,16 +4,6 @@ from BlockChain import BlockChain
 import multiprocessing
 import pickle
 
-shared_var = multiprocessing.Value('i', 0)
-
-
-def modify(shared_variable):
-    while True:
-        shared_variable.value += 10
-        print(f'script 1 changed the shared value for {shared_variable.value}')
-        if (input('continue?')) == '0':
-            break
-
 
 def send_the_last_block(blockchain):
     host = '127.0.0.1'
@@ -24,7 +14,7 @@ def send_the_last_block(blockchain):
     server_socket.listen()
     while True:
         client_socket, client_address = server_socket.accept()
-        client_socket.send(blockchain.tail.data)
+        client_socket.send(blockchain.tail.data.encode())
         client_socket.close()
 
 
@@ -121,7 +111,7 @@ if __name__ == '__main__':
             while current_block is not None:
                 cipher_vote = pickle.loads(current_block.data.encode())
                 election_result = election_result + cipher_vote
-                current_block = current_block.next
+                current_block = current_block.next_block
 
             plain_vote = private_key.decrypt(election_result)
             result = f'the election ends with result: {plain_vote}'
