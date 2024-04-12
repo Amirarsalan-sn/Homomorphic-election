@@ -111,3 +111,6 @@ if __name__ == '__main__':
 
             print('election result calculated and added to the local and country chains.')
             break
+
+        else:
+            print('invalid command.')

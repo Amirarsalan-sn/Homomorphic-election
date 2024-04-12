@@ -224,3 +224,6 @@ if __name__ == '__main__':
             print(result)
             state[4] = 1
             break
+
+        else:
+            print('invalid command.')
