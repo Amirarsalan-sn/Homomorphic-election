@@ -39,5 +39,8 @@ You should run these commands respectively otherwise, the process will not run t
    vote and will show a proper message.
 5. `env ip port`, this command will add up the encrypted votes and sends the result to the ip and port specifed in the command.
 You should run these commands respectively and with a correct format otherwise, the process will not run the command and will show you proper messages and guides you towards the correct command.
+## Example
+This, demonstrates an example of how to use and run commands. It shows a simple scenario where there are two local chains gathering votes, first one votes adds up to 7 and the second one adds up to -4. the result will be 3. The gif is 3mins long.
 
+![example](images/example.gif)
 
