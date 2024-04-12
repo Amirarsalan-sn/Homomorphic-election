@@ -8,17 +8,17 @@ import pickle
 
 
 def send_the_last_block(blockchain, ss):
-    print('hello world')
+    print('process initiated.\ncommand> ')
     while True:
         try:
             client_socket, client_address = ss.accept()
         except Exception as e:
-            print(f"failed to establish connection with a client: {e}")
+            print(f"failed to establish connection with a client: {e}.\ncommand> ")
             continue
         try:
             client_socket.send(blockchain['data'].tail.data)
         except Exception as e:
-            print(f'failed to send data to client {client_address}: {e}')
+            print(f'failed to send data to client {client_address}: {e}.\ncommand> ')
         finally:
             client_socket.close()
 
@@ -27,27 +27,27 @@ def listen_for_votes(blockchain, ss):
     pool = []
     while True:
         try:
-            print('listening started')
+            print('listening started.\ncommand> ')
             client_socket, client_address = ss.accept()
             if client_address in pool:
                 client_socket.close()
                 continue
             else:
                 pool.append(client_address)
-                print(f'client {client_address}, added')
+                print(f'client {client_address}, added.\ncommand> ')
 
         except Exception as e:
-            print(f'failed to establish connection with a client: {e}')
+            print(f'failed to establish connection with a client: {e}.\ncommand> ')
             continue
         try:
-            print(f'connection established with {client_address}')
+            print(f'connection established with {client_address}.\ncommand> ')
             received_vote = client_socket.recv(4096)
             shared_chain = blockchain['data']
             shared_chain.add_block(received_vote)
             blockchain['data'] = shared_chain
-            print(f"block added, size {blockchain['data'].size}")
+            print(f"block added, size {blockchain['data'].size}.\ncommand> ")
         except Exception as e:
-            print(f'failed to receive votes of client {client_address}: {e}')
+            print(f'failed to receive votes of client {client_address}: {e}.\ncommand> ')
         finally:
             client_socket.close()
 
