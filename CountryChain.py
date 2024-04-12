@@ -8,29 +8,43 @@ import pickle
 def send_the_last_block(blockchain):
     host = '127.0.0.1'
     port = 12000
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen()
+    try:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((host, port))
+        server_socket.listen()
+    except Exception as e:
+        print("couldn't establish a server, reset the lfp state using 'lfpr' command and try again: ", e)
+        return
     while True:
-        client_socket, client_address = server_socket.accept()
-        client_socket.send(blockchain.tail.data.encode())
-        client_socket.close()
+        try:
+            client_socket, client_address = server_socket.accept()
+            client_socket.send(blockchain.tail.data.encode())
+        except Exception as e:
+            print(f'client {client_address}, failed to receive the public key: {e}')
+        finally:
+            client_socket.close()
 
 
 def listen_for_votes(blockchain: BlockChain):
     host = '127.0.0.1'
     port = 12001
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen()
+    try:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind((host, port))
+        server_socket.listen()
+    except Exception as e:
+        print("couldn't establish a server, reset the gvs state using 'gvsr' command and try again: ", e)
+        return
 
     while True:
-        client_socket, client_address = server_socket.accept()
-        received_vote = client_socket.recv(4096)
-        blockchain.add_block(received_vote.decode('utf-8'))
-        client_socket.close()
+        try:
+            client_socket, client_address = server_socket.accept()
+            received_vote = client_socket.recv(4096)
+            blockchain.add_block(received_vote.decode('utf-8'))
+        except Exception as e:
+            print(f'failed to receive votes of client {client_address}: {e}')
+        finally:
+            client_socket.close()
 
 
 if __name__ == '__main__':
@@ -77,6 +91,20 @@ if __name__ == '__main__':
             child_process.start()
             state[2] = 1
 
+        # reset the lfp state in case of which an error occurred during the last phase and the child process terminated.
+        elif command == 'lfpr':
+            if state[2] == 0:
+                print("you are not in the lfp state.")
+                continue
+            if state[2] == 1 and state[3] == 1:
+                print("you have passed the lfp state.")
+                continue
+            if child_process is not None and child_process.is_alive():
+                child_process.terminate()
+
+            state[2] = 0
+            print('lfp state reset.')
+
         elif command == 'gvs':  # gather the votes of election
             if state[3] == 1:
                 print('you have already done this phase.')
@@ -91,6 +119,22 @@ if __name__ == '__main__':
             child_process.terminate()
             child_process = multiprocessing.Process(target=listen_for_votes, args=(country_chain,))
             state[3] = 1
+
+        # reset the gvs state in case of which an error occurred during the last phase and the child process terminated.
+        elif command == 'gvsr':
+            if state[3] == 0:
+                print("you are not in the gvs state.")
+                continue
+
+            if state[3] == 1 and state[4] == 1:
+                print("you have already done this phase.")
+                continue
+
+            if child_process is not None and child_process.is_alive():
+                child_process.terminate()
+
+            state[3] = 0
+            print('gvs state reset.')
 
         elif command == 'elr':  # election result
             if state[4] == 1:
