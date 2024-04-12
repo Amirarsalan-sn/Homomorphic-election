@@ -37,6 +37,7 @@ if __name__ == '__main__':
                 public_key_byte = client_socket.recv(4096)
                 public_key = pickle.loads(public_key_byte)
                 local_chain.add_block(public_key_byte.decode('utf-8'))
+                election_result = public_key.encrypt(election_result)
             except Exception as e:
                 print(f"failed to receive the public key from server: {e}")
                 continue

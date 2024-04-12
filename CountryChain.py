@@ -18,9 +18,13 @@ def send_the_last_block(blockchain):
     while True:
         try:
             client_socket, client_address = server_socket.accept()
+        except Exception as e:
+            print(f"failed to establish connection with a client: {e}")
+            continue
+        try:
             client_socket.send(blockchain.tail.data.encode())
         except Exception as e:
-            print(f'client {client_address}, failed to receive the public key: {e}')
+            print(f'failed to send data to client {client_address}: {e}')
         finally:
             client_socket.close()
 
@@ -39,6 +43,10 @@ def listen_for_votes(blockchain: BlockChain):
     while True:
         try:
             client_socket, client_address = server_socket.accept()
+        except Exception as e:
+            print(f'failed to establish connection with a client: {e}')
+            continue
+        try:
             received_vote = client_socket.recv(4096)
             blockchain.add_block(received_vote.decode('utf-8'))
         except Exception as e:
@@ -53,7 +61,7 @@ if __name__ == '__main__':
     process.join()
 
     print(f'final value of shared value: {shared_var.value}')"""
-    # initial state -> [blockchain created, key pairs created, kp request, gather votes, election result]
+    # initial state -> [blockchain created, key pairs created, public key request, gather votes, election result]
     state = [0, 0, 0, 0, 0]
     country_chain = None
     child_process = None
@@ -61,7 +69,7 @@ if __name__ == '__main__':
     while True:
         command = input('command> ')
 
-        if command == 'bc':  # create the blockchain
+        if command == 'cb':  # create the blockchain
             if state[0] == 1:
                 print('you have already created a blockchain !')
                 continue
@@ -71,12 +79,12 @@ if __name__ == '__main__':
 
         elif command == 'gnk':  # generate public and private keys
             if state[0] == 0:
-                print('first create a blockchain using "bc" command.')
+                print('first create a blockchain using "cb" command.')
             if state[1] == 1:
                 print('you have already created the key pairs.')
             public_key, private_key = paillier.generate_paillier_keypair()
             print('public and private keys generated')
-            country_chain.add_block(str(public_key.n))
+            country_chain.add_block(pickle.dumps(public_key).decode('utf-8'))
             print('public key added to the blockchain')
             state[1] = 1
 
@@ -85,7 +93,7 @@ if __name__ == '__main__':
                 print('you are already in this phase.')
                 continue
             if not (state[0] == 1 and state[1] == 1):
-                print('you should create a blockchain and a key pair first.\nuse "bc" and "gnk" commands')
+                print('you should create a blockchain and a key pair first. use "bc" and "gnk" commands')
                 continue
             child_process = multiprocessing.Process(target=send_the_last_block, args=(country_chain,))
             child_process.start()
@@ -116,6 +124,11 @@ if __name__ == '__main__':
                 3. listen for public key request: "lfp".
                 """)
                 continue
+            if not child_process.is_alive():
+                print('lfp phase is not completed correctly, you can not run this phase.')
+                state[2] = 0
+                continue
+
             child_process.terminate()
             child_process = multiprocessing.Process(target=listen_for_votes, args=(country_chain,))
             state[3] = 1
@@ -148,7 +161,10 @@ if __name__ == '__main__':
                 4. gather the votes from local chains: "gvs".
                 """)
                 continue
-
+            if not child_process.is_alive():
+                print('gvs phase is not completed correctly, you can not run this command.')
+                state[3] = 0
+                continue
             child_process.terminate()
             #  first block is the genesis block and the second one is the public key
             current_block = country_chain.head.next_block.next_block
