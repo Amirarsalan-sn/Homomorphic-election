@@ -44,3 +44,7 @@ This, demonstrates an example of how to use and run commands. It shows a simple 
 
 ![example](images/example.gif)
 
+## Requirements
+```script
+pip install phe
+```
